@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:dige_pdf_to_excel/excel_operator.dart';
+import 'package:dige_pdf_to_excel/toast_alert.dart';
+import 'package:eyro_toast/eyro_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,32 +11,33 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'data_grabber.dart';
 
 void main() {
+  EyroToastSetup.shared.navigatorKey = GlobalKey<NavigatorState>();
   runApp(const MyApp());
-  //test
-  ExcelOperator.createExcel();
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   // This widget is the root of your application.
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      navigatorKey: EyroToastSetup.shared.navigatorKey,
+      title: 'AndyToolkit',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Dige\'s tailor-made toolkit from Zhige'),
     );
   }
 }
@@ -58,20 +61,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  String _extractedTxt = "";
   final List<String> _statementList = [];
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,43 +71,36 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  width: 4,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  const Text(
+                    '   Extract statement table from PDF (Westpac PDF bank statement '
+                        'only)   ',
+                  ),
+                  CupertinoButton(
+                    onPressed: _chooseAFile,
+                    child: const Text("Choose a Westpac statement PDF"),
+                  )
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-            Text(
-              _extractedTxt,
-            ),
-            CupertinoButton(
-              child: Text("button"),
-              onPressed: _chooseAFile,
-            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _incrementCounter();
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
     );
   }
-
-  // void _extractTxt() {
-  //   final PdfDocument document =
-  //       PdfDocument(inputBytes: File('23.pdf').readAsBytesSync());
-  //   setState(() {
-  //     _extractedTxt = PdfTextExtractor(document).extractText().substring(0, 10);
-  //   });
-  //   document.dispose();
-  // }
 
   Future<void> _chooseAFile() async {
     _statementList.clear();
@@ -126,13 +109,12 @@ class _MyHomePageState extends State<MyHomePage> {
     if (result != null) {
       file = File(result.files.single.path!);
       final PdfDocument document = PdfDocument(inputBytes: file.readAsBytesSync());
-      setState(() {
-        _extractedTxt = PdfTextExtractor(document).extractText().substring(0, 10);
-      });
-      final _whitespaceRE = RegExp(r"\s+");
-      var charList = PdfTextExtractor(document).extractText(layoutText: true)
-          .replaceAll("\n", " ").replaceAll(_whitespaceRE, " ") .split
-        ("");
+      final whitespaceRE = RegExp(r"\s+");
+      var charList = PdfTextExtractor(document)
+          .extractText(layoutText: true)
+          .replaceAll("\n", " ")
+          .replaceAll(whitespaceRE, " ")
+          .split("");
 
       var itemBuffer = StringBuffer();
       var openKeyBuffer = StringBuffer();
@@ -143,18 +125,17 @@ class _MyHomePageState extends State<MyHomePage> {
       final closeKeyRegex = RegExp(r"[0-9]\.[0-9][0-9]");
       //iterate char list to find the open key.
       for (var i = 0; i < charList.length; i++) {
-
         //if grabber is open, keep writing.
-        if(grabber.isOpening){
+        if (grabber.isOpening) {
           itemBuffer.write(charList[i]);
           //find close key
-          for(var j = 3; j > -1; j--){
-            closeKeyBuffer.write(charList[i-j]);
+          for (var j = 3; j > -1; j--) {
+            closeKeyBuffer.write(charList[i - j]);
           }
-          if(closeKeyRegex.hasMatch(closeKeyBuffer.toString())){
+          if (closeKeyRegex.hasMatch(closeKeyBuffer.toString())) {
             grabber.findOneCloseKey();
-            if(itemBuffer.toString().contains("CLOSING BALANCE") || itemBuffer.toString
-              ().contains("OPENING BALANCE")){
+            if (itemBuffer.toString().contains("CLOSING BALANCE") ||
+                itemBuffer.toString().contains("OPENING BALANCE")) {
               grabber.findOneCloseKey();
             }
             if (!grabber.isOpening) {
@@ -167,31 +148,24 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         //find open key
         if (i < charList.length - 8) {
-          for(var j = 0; j < 8; j++){
-                    openKeyBuffer.write(charList[i+j]);
-                  }
+          for (var j = 0; j < 8; j++) {
+            openKeyBuffer.write(charList[i + j]);
+          }
         }
         //check key
-        if(openKeyRegex.hasMatch(openKeyBuffer.toString())){
+        if (openKeyRegex.hasMatch(openKeyBuffer.toString())) {
           grabber.open();
           openKeyBuffer.clear();
           itemBuffer.write(charList[i]);
         }
       }
-
-
-
-      for (var element in _statementList) {print(element);}
+      for (var element in _statementList) {
+        print(element);
+      }
       document.dispose();
-      ExcelOperator.createExcel();
-      ExcelOperator.writeInExcel();
+      ExcelOperator.writeInExcel(_statementList);
     } else {
-      // User canceled the picker
+      ToastAlert.alert("User canceled choosing");
     }
   }
-
-
-
-
 }
-
