@@ -1,15 +1,7 @@
-import 'dart:io';
-
-import 'package:dige_pdf_to_excel/pdfToExcel/excel_operator.dart';
-import 'package:dige_pdf_to_excel/pdfToExcel/pdf_chooser.dart';
-import 'package:dige_pdf_to_excel/toast_alert.dart';
+import 'package:dige_pdf_to_excel/pdfToExcel/pdf_operator_factory.dart';
 import 'package:eyro_toast/eyro_toast.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
-
-import 'pdfToExcel/data_grabber_locker.dart';
 
 void main() {
   EyroToastSetup.shared.navigatorKey = GlobalKey<NavigatorState>();
@@ -85,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   CupertinoButton(
                     onPressed: (){
-                      final pdfChooser = PdfChooser();
+                      final pdfChooser = PdfOperatorFactory();
                       pdfChooser.chooseAFile();
                     },
                     child: const Text("Choose a Westpac statement PDF"),

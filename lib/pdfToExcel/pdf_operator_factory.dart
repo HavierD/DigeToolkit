@@ -7,7 +7,7 @@ import '../toast_alert.dart';
 import 'data_grabber_locker.dart';
 import 'excel_operator.dart';
 
-class PdfChooser{
+class PdfOperatorFactory{
 
   final List<String> _statementList = [];
 
@@ -72,6 +72,9 @@ class PdfChooser{
         print(element);
       }
       document.dispose();
+      if(_statementList.isEmpty){
+        ToastAlert.alert("Data grabbed failed!!!!!!!!!!!!!!!");
+      }
       ExcelOperator.writeInExcel(_statementList);
     } else {
       ToastAlert.message("User canceled choosing");
